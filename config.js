@@ -7,7 +7,7 @@
 window.MT_CONFIG = {
   // Web app URL of the Google Apps Script engine (Stage 2).
   // Leave empty to run the preview with made-up members.
-  API_URL: "",
+  API_URL: "https://script.google.com/macros/s/AKfycbzBzBcF35ck8WtYSX3KtzX4nXti3cHff7RMQ3oReN3ScqM6yfFLMZeUdTcI93jt6yf6/exec",
 
   // Optional "Message Pete" link (e.g. https://wa.me/447...). Leave empty to hide the button.
   // Note: whatever goes here is publicly visible.
