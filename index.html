@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cheadle Blues – My Tickets</title>
+<meta name="description" content="Cheadle Blues members: check your away ticket and coach status.">
+<meta name="theme-color" content="#1C2C5B">
+<meta name="robots" content="noindex">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Cheadle Blues">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <div class="badge" aria-hidden="true"><span class="sash"></span><span class="cb">CB</span></div>
+    <div class="brand-text">
+      <div class="brand-name">CHEADLE BLUES</div>
+      <div class="brand-sub">My tickets</div>
+    </div>
+  </div>
+  <button type="button" id="logout" class="ghost-btn" hidden>Log out</button>
+</header>
+<div id="demo-banner" class="demo-banner" hidden>Preview – made-up members. Type any email, then any 6 digits.</div>
+<main id="app" tabindex="-1" aria-live="polite"></main>
+<noscript><p class="pad">Please turn on JavaScript to use My Tickets.</p></noscript>
+<script src="config.js"></script>
+<script src="demo-data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
