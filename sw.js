@@ -1,5 +1,5 @@
 /* Keeps the app shell available offline. Ticket data is never cached. */
-var CACHE = "mt-v2";
+var CACHE = "mt-v3";
 var SHELL = ["./", "index.html", "styles.css", "app.js", "config.js", "demo-data.js", "manifest.webmanifest",
   "icons/icon-192.png", "icons/icon-512.png", "icons/maskable-512.png", "icons/apple-touch-icon.png", "icons/favicon-32.png"];
 

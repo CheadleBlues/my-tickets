@@ -7,7 +7,7 @@
   var app = document.getElementById("app");
   var logoutBtn = document.getElementById("logout");
 
-  var state = { screen: "login", email: "", data: null, person: 0, game: null, error: "", busy: false };
+  var state = { screen: "login", email: "", data: null, person: 0, game: null, error: "", busy: false, refreshing: false };
 
   /* ---------- small helpers ---------- */
   function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) { return null; } }
@@ -70,24 +70,46 @@
     if (code.length !== 6) return go({ error: "Please enter the 6-digit code." });
     go({ busy: true, error: "" });
     api("verify", { email: state.email, code: code })
-      .then(function (j) { store("mt_token", j.token); loadStatus(); })
+      .then(function (j) { store("mt_token", j.token); store("mt_status", null); state.data = null; loadStatus(); })
       .catch(function (e) { go({ busy: false, error: e.message }); });
   }
+  // The last status is kept on the phone so the app opens instantly, then refreshes in the background.
+  function savedStatus() { try { return JSON.parse(store("mt_status") || "null"); } catch (e) { return null; } }
   function loadStatus() {
     var token = store("mt_token");
     if (!token) return go({ screen: "login", busy: false });
-    go({ screen: "loading", error: "" });
+    if (state.refreshing) return;
+    var saved = state.data || savedStatus();
+    if (saved) {
+      // show the saved copy straight away (keep whatever screen they're on)
+      Object.assign(state, { data: saved, error: "", refreshing: true });
+      if (state.screen !== "list" && state.screen !== "detail") state.screen = "list";
+      render();
+    } else {
+      go({ screen: "loading", error: "", refreshing: true });
+    }
     api("status", { token: token })
-      .then(function (j) { go({ screen: "list", data: j, person: 0, game: null, busy: false }); })
+      .then(function (j) {
+        store("mt_status", JSON.stringify(j));
+        var people = j.people || [];
+        var person = state.person < people.length ? state.person : 0;
+        var game = state.screen === "detail" && people[person] && state.game < (people[person].games || []).length ? state.game : null;
+        Object.assign(state, { data: j, person: person, game: game, busy: false, refreshing: false, error: "" });
+        if (state.screen !== "detail" || game === null) state.screen = "list";
+        render();
+      })
       .catch(function (e) {
-        if (/expired|log in/i.test(e.message)) { store("mt_token", null); return go({ screen: "login", busy: false, error: e.message }); }
-        go({ screen: "list", busy: false, error: e.message });
+        state.refreshing = false;
+        if (/expired|log in/i.test(e.message)) { store("mt_token", null); store("mt_status", null); return go({ screen: "login", data: null, busy: false, error: e.message }); }
+        if (saved) { state.error = "Couldn’t update just now – showing your last saved status. Close and reopen the app to try again."; render(); }
+        else go({ screen: "list", busy: false, error: e.message });
       });
   }
   function logout() {
     var token = store("mt_token");
     if (token && !DEMO) api("logout", { token: token }).catch(function () {});
     store("mt_token", null);
+    store("mt_status", null);
     go({ screen: "login", email: "", data: null, person: 0, game: null, error: "" });
   }
   logoutBtn.addEventListener("click", logout);
@@ -165,7 +187,8 @@
     return h("div", { class: "list-wrap" },
       h("div", { class: "stack", style: "gap:4px" },
         h("h1", { class: "small", text: d.greeting || "My tickets" }),
-        d.updated ? h("p", { class: "muted", text: "Updated from Pete’s lists: " + d.updated }) : null),
+        state.refreshing ? h("p", { class: "muted updating", role: "status", text: "Updating…" })
+          : d.updated ? h("p", { class: "muted", text: "Updated from Pete’s lists: " + d.updated }) : null),
       state.error ? h("div", { class: "error", role: "alert", text: state.error }) : null,
       tabs,
       games.length ? h("div", { class: "games" }, games) : h("div", { class: "empty", text: "You don’t have any ticket applications open at the moment. Names for upcoming games are taken at branch meetings." }),
@@ -211,7 +234,7 @@
   /* ---------- start ---------- */
   if (store("mt_token")) loadStatus(); else render();
   document.addEventListener("visibilitychange", function () {
-    if (document.visibilityState === "visible" && (state.screen === "list") && store("mt_token")) loadStatus();
+    if (document.visibilityState === "visible" && (state.screen === "list" || state.screen === "detail") && store("mt_token")) loadStatus();
   });
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () {}); });
