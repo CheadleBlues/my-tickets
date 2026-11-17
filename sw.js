@@ -1,5 +1,5 @@
 /* Keeps the app shell available offline. (The last ticket status is kept by app.js in localStorage, not here.) */
-var CACHE = "mt-v4";
+var CACHE = "mt-v5";
 var SHELL = ["./", "index.html", "styles.css", "app.js", "config.js", "demo-data.js", "manifest.webmanifest",
   "icons/icon-192.png", "icons/icon-512.png", "icons/maskable-512.png", "icons/apple-touch-icon.png", "icons/favicon-32.png"];
 

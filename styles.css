@@ -103,6 +103,10 @@ input.code { height: 58px; font-size: 26px; font-weight: 600; letter-spacing: 10
 .pill.red { background: #FBE3E3; color: #8A1C1C; }
 .pill.coach { background: #EEF1F5; color: var(--ink-2); font-weight: 600; }
 .action { font-size: 13px; font-weight: 600; color: #7A3E00; background: #FFF1D6; border-radius: 8px; padding: 8px 10px; }
+.meeting { background: var(--sky-pale); border-radius: 14px; padding: 12px 16px; display: flex; flex-direction: column; gap: 2px; }
+.meeting .label { color: var(--navy); }
+.meeting-when { font-size: 16px; font-weight: 700; color: var(--navy); }
+.meeting-where { font-size: 14px; color: var(--ink-2); }
 .empty { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; font-size: 15px; line-height: 1.5; color: var(--ink-2); }
 
 /* Detail */

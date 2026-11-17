@@ -9,6 +9,7 @@ window.MT_DEMO = (function () {
   return {
     greeting: "Hi Dave and Sam",
     updated: "Sun 15 Nov, 8:20am",
+    nextMeeting: { when: "Mon 30 Nov, 7pm", where: "Cheadle & Gatley Conservative Club" },
     people: [
       { name: "Dave", games: [
         g(arsenal, { tone: "green", ticketShort: "Got a ticket", ticketLine: "You’ve got a ticket through the branch.", paidLine: "Paid – thanks. Your ticket will be emailed to you nearer the game.", coachShort: "Coach booked", coachLine: "Booked. Club opens 8:30am, coach leaves 9:30am. £45.", next: "Nothing to do. Look out for an email from Pete with your ticket." }),

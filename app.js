@@ -190,6 +190,11 @@
         state.refreshing ? h("p", { class: "muted updating", role: "status", text: "Updating…" })
           : d.updated ? h("p", { class: "muted", text: "Updated from Pete’s lists: " + d.updated }) : null),
       state.error ? h("div", { class: "error", role: "alert", text: state.error }) : null,
+      // Next branch meeting (from the engine, v7+): shown only when there's a meeting coming up
+      d.nextMeeting && d.nextMeeting.when ? h("div", { class: "meeting" },
+        h("div", { class: "label", text: "NEXT BRANCH MEETING" }),
+        h("div", { class: "meeting-when", text: d.nextMeeting.when }),
+        d.nextMeeting.where ? h("div", { class: "meeting-where", text: d.nextMeeting.where }) : null) : null,
       tabs,
       games.length ? h("div", { class: "games" }, games) : h("div", { class: "empty", text: "You don’t have any ticket applications open at the moment. Names for upcoming games are taken at branch meetings." }),
       CFG.CONTACT_URL ? h("a", { class: "btn outline", href: CFG.CONTACT_URL, target: "_blank", rel: "noopener", text: "Something wrong? Message Pete" }) : null,
