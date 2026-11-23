@@ -97,6 +97,7 @@
         Object.assign(state, { data: j, person: person, game: game, busy: false, refreshing: false, error: "" });
         if (state.screen !== "detail" || game === null) state.screen = "list";
         render();
+        pushRefresh();
       })
       .catch(function (e) {
         state.refreshing = false;
@@ -107,6 +108,9 @@
   }
   function logout() {
     var token = store("mt_token");
+    var pushTok = store("mt_push_token");
+    if (pushTok && !DEMO) api("pushOff", { fcmToken: pushTok }).catch(function () {});
+    store("mt_push", null); store("mt_push_token", null);
     if (token && !DEMO) api("logout", { token: token }).catch(function () {});
     store("mt_token", null);
     store("mt_status", null);
@@ -134,6 +138,83 @@
       return h("div", { class: "install" }, t, close);
     }
     return null;
+  }
+
+  /* ---------- notifications (v9, Firebase Cloud Messaging) ---------- */
+  var push = { busy: false, msg: "" };
+  function pushPossible() {
+    return !DEMO && CFG.FIREBASE && CFG.VAPID_KEY && "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+  }
+  var fbLoading = null;
+  function loadFirebase() {
+    if (fbLoading) return fbLoading;
+    function add(src) { return new Promise(function (ok, bad) { var s = document.createElement("script"); s.src = src; s.onload = ok; s.onerror = function () { bad(new Error("Couldn’t load notifications – check your signal and try again.")); }; document.head.appendChild(s); }); }
+    fbLoading = add(CFG.FIREBASE_SDK + "firebase-app-compat.js")
+      .then(function () { return add(CFG.FIREBASE_SDK + "firebase-messaging-compat.js"); })
+      .then(function () {
+        if (!firebase.apps.length) firebase.initializeApp(CFG.FIREBASE);
+        return firebase.messaging.isSupported();
+      })
+      .then(function (ok) {
+        if (!ok) throw new Error("Notifications aren’t supported on this phone/browser.");
+        var m = firebase.messaging();
+        // App open when a notification arrives: show it anyway and refresh the cards
+        m.onMessage(function (p) {
+          var n = (p && p.notification) || {};
+          navigator.serviceWorker.ready.then(function (reg) { reg.showNotification(n.title || "Cheadle Blues", { body: n.body || "", icon: "icons/icon-192.png", tag: "mt-status" }); });
+          if (store("mt_token")) loadStatus();
+        });
+        return m;
+      })
+      .catch(function (e) { fbLoading = null; throw e; });
+    return fbLoading;
+  }
+  function deviceName() {
+    var ua = navigator.userAgent;
+    return (isIOS() ? "iPhone/iPad" : /android/i.test(ua) ? "Android" : "Computer") + (isStandalone() ? " app" : " browser");
+  }
+  function getPushToken() {
+    return Promise.all([loadFirebase(), navigator.serviceWorker.register("sw.js").then(function () { return navigator.serviceWorker.ready; })])
+      .then(function (r) { return r[0].getToken({ vapidKey: CFG.VAPID_KEY, serviceWorkerRegistration: r[1] }); })
+      .then(function (t) { if (!t) throw new Error("Couldn’t turn on notifications – please try again."); return t; });
+  }
+  function pushOn() {
+    push.busy = true; push.msg = ""; render();
+    Notification.requestPermission()
+      .then(function (p) { if (p !== "granted") throw new Error(p === "denied" ? "Notifications are blocked for this app. You can allow them in your phone’s settings." : "Notifications weren’t turned on."); return getPushToken(); })
+      .then(function (t) { return api("pushOn", { token: store("mt_token"), fcmToken: t, device: deviceName() }).then(function () { return t; }); })
+      .then(function (t) { store("mt_push", "on"); store("mt_push_token", t); push.busy = false; push.msg = ""; render(); })
+      .catch(function (e) { push.busy = false; push.msg = /unknown request/i.test(e.message) ? "Notifications aren’t switched on yet – please try again later." : e.message; render(); });
+  }
+  function pushOff() {
+    var t = store("mt_push_token");
+    store("mt_push", null); store("mt_push_token", null); push.msg = ""; render();
+    if (t) api("pushOff", { fcmToken: t }).catch(function () {});
+    loadFirebase().then(function (m) { return m.deleteToken(); }).catch(function () {});
+  }
+  // Phones sometimes change their notification address – quietly keep the engine up to date
+  var pushChecked = false;
+  function pushRefresh() {
+    if (pushChecked || !pushPossible() || store("mt_push") !== "on" || Notification.permission !== "granted") return;
+    pushChecked = true;
+    getPushToken().then(function (t) {
+      if (t !== store("mt_push_token")) return api("pushOn", { token: store("mt_token"), fcmToken: t, device: deviceName() }).then(function () { store("mt_push_token", t); });
+    }).catch(function () {});
+  }
+  function pushBox() {
+    if (!pushPossible()) return null;
+    if (store("mt_push") === "on" && Notification.permission === "granted") {
+      return h("div", { class: "muted", style: "display:flex;align-items:center;justify-content:space-between;gap:8px" },
+        h("span", { text: "🔔 Notifications on – you’ll get a message when your status changes." }),
+        h("button", { type: "button", class: "link-btn", text: "Turn off", onclick: pushOff }));
+    }
+    if (Notification.permission === "denied") {
+      return h("p", { class: "muted", text: "🔕 Notifications are blocked for this app. To get them, allow notifications for Cheadle Blues in your phone’s settings." });
+    }
+    return h("div", { class: "install" },
+      h("div", { class: "install-text" }, h("strong", { text: "🔔 Get a notification when your ticket or coach status changes" }),
+        h("div", { style: "margin-top:10px" }, h("button", { type: "button", class: "btn", style: "min-height:44px;font-size:15px", disabled: push.busy, text: push.busy ? "Turning on…" : "Turn on notifications", onclick: pushOn })),
+        push.msg ? h("div", { class: "error", role: "alert", style: "margin-top:10px", text: push.msg }) : null));
   }
 
   /* ---------- screens ---------- */
@@ -198,6 +279,7 @@
       tabs,
       games.length ? h("div", { class: "games" }, games) : h("div", { class: "empty", text: "You don’t have any ticket applications open at the moment. Names for upcoming games are taken at branch meetings." }),
       CFG.CONTACT_URL ? h("a", { class: "btn outline", href: CFG.CONTACT_URL, target: "_blank", rel: "noopener", text: "Something wrong? Message Pete" }) : null,
+      pushBox(),
       installTip());
   }
   function detailScreen() {

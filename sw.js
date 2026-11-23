@@ -1,5 +1,24 @@
-/* Keeps the app shell available offline. (The last ticket status is kept by app.js in localStorage, not here.) */
-var CACHE = "mt-v5";
+/* Keeps the app shell available offline. (The last ticket status is kept by app.js in localStorage, not here.)
+   Also receives ticket-update notifications (Firebase Cloud Messaging) when the app is closed. */
+try {
+  importScripts("config.js");
+  var MT = self.MT_CONFIG || {};
+  if (MT.FIREBASE && MT.FIREBASE_SDK) {
+    importScripts(MT.FIREBASE_SDK + "firebase-app-compat.js", MT.FIREBASE_SDK + "firebase-messaging-compat.js");
+    firebase.initializeApp(MT.FIREBASE);
+    firebase.messaging();   // shows the notification itself when the app isn't open
+  }
+} catch (e) { /* offline or blocked – the app still works, just without notifications */ }
+
+// Tapping a notification opens (or brings forward) the app
+self.addEventListener("notificationclick", function (e) {
+  e.notification.close();
+  e.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(function (list) {
+    for (var i = 0; i < list.length; i++) if ("focus" in list[i]) return list[i].focus();
+    return self.clients.openWindow("./");
+  }));
+});
+var CACHE = "mt-v6";
 var SHELL = ["./", "index.html", "styles.css", "app.js", "config.js", "demo-data.js", "manifest.webmanifest",
   "icons/icon-192.png", "icons/icon-512.png", "icons/maskable-512.png", "icons/apple-touch-icon.png", "icons/favicon-32.png"];
 
