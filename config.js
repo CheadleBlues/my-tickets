@@ -23,6 +23,7 @@ self.MT_CONFIG = {   // "self" so the service worker can read it too (notificati
     messagingSenderId: "956230202102",
     appId: "1:956230202102:web:a8bfed43cb92e5509972d7"
   },
+  PUSH_READY: false,   // switch to true once engine v9 is deployed
   VAPID_KEY: "BAX-jqVer7nsW6hNKbeUmqOXXWlJGAFsK1vQ_4qeoSlvivyBzeeilFQG18G_Z89dNZ0D4Jg5vC82116MIldXNr0",
   FIREBASE_SDK: "https://www.gstatic.com/firebasejs/10.12.2/"
 };

@@ -143,7 +143,7 @@
   /* ---------- notifications (v9, Firebase Cloud Messaging) ---------- */
   var push = { busy: false, msg: "" };
   function pushPossible() {
-    return !DEMO && CFG.FIREBASE && CFG.VAPID_KEY && "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+    return !DEMO && CFG.PUSH_READY && CFG.FIREBASE && CFG.VAPID_KEY && "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
   }
   var fbLoading = null;
   function loadFirebase() {
