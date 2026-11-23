@@ -173,16 +173,28 @@
     var ua = navigator.userAgent;
     return (isIOS() ? "iPhone/iPad" : /android/i.test(ua) ? "Android" : "Computer") + (isStandalone() ? " app" : " browser");
   }
+  // Each step gives up after a while and says where it stuck (so a screenshot tells Pete what went wrong)
+  function step(p, secs, label) {
+    return new Promise(function (ok, bad) {
+      var t = setTimeout(function () { bad(new Error("Couldn’t turn on notifications (stuck at: " + label + "). Please close the app fully, reopen it and try again – if it happens again, send Pete a screenshot.")); }, secs * 1000);
+      p.then(function (v) { clearTimeout(t); ok(v); }, function (e) { clearTimeout(t); bad(new Error((e && e.message ? e.message : String(e)) + " [" + label + "]")); });
+    });
+  }
   function getPushToken() {
-    return Promise.all([loadFirebase(), navigator.serviceWorker.register("sw.js").then(function () { return navigator.serviceWorker.ready; })])
-      .then(function (r) { return r[0].getToken({ vapidKey: CFG.VAPID_KEY, serviceWorkerRegistration: r[1] }); })
-      .then(function (t) { if (!t) throw new Error("Couldn’t turn on notifications – please try again."); return t; });
+    return Promise.all([
+      step(loadFirebase(), 20, "loading"),
+      step(navigator.serviceWorker.register("sw.js").then(function () { return navigator.serviceWorker.ready; }), 15, "phone set-up")
+    ]).then(function (r) {
+      function ask() { return r[0].getToken({ vapidKey: CFG.VAPID_KEY, serviceWorkerRegistration: r[1] }); }
+      // iPhones often fail the very first time – try once more
+      return step(ask().catch(function () { return new Promise(function (w) { setTimeout(w, 1500); }).then(ask); }), 30, "getting the notification address");
+    }).then(function (t) { if (!t) throw new Error("Couldn’t turn on notifications – please try again."); return t; });
   }
   function pushOn() {
     push.busy = true; push.msg = ""; render();
-    Notification.requestPermission()
+    step(Promise.resolve(Notification.requestPermission()), 60, "permission")
       .then(function (p) { if (p !== "granted") throw new Error(p === "denied" ? "Notifications are blocked for this app. You can allow them in your phone’s settings." : "Notifications weren’t turned on."); return getPushToken(); })
-      .then(function (t) { return api("pushOn", { token: store("mt_token"), fcmToken: t, device: deviceName() }).then(function () { return t; }); })
+      .then(function (t) { return step(api("pushOn", { token: store("mt_token"), fcmToken: t, device: deviceName() }), 30, "saving").then(function () { return t; }); })
       .then(function (t) { store("mt_push", "on"); store("mt_push_token", t); push.busy = false; push.msg = ""; render(); })
       .catch(function (e) { push.busy = false; push.msg = /unknown request/i.test(e.message) ? "Notifications aren’t switched on yet – please try again later." : e.message; render(); });
   }
