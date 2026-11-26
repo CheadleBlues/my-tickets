@@ -18,7 +18,7 @@ self.addEventListener("notificationclick", function (e) {
     return self.clients.openWindow("./");
   }));
 });
-var CACHE = "mt-v7";
+var CACHE = "mt-v8";
 var SHELL = ["./", "index.html", "styles.css", "app.js", "config.js", "demo-data.js", "manifest.webmanifest",
   "icons/icon-192.png", "icons/icon-512.png", "icons/maskable-512.png", "icons/apple-touch-icon.png", "icons/favicon-32.png"];
 

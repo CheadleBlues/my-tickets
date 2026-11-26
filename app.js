@@ -161,7 +161,7 @@
         // App open when a notification arrives: show it anyway and refresh the cards
         m.onMessage(function (p) {
           var n = (p && p.notification) || {};
-          navigator.serviceWorker.ready.then(function (reg) { reg.showNotification(n.title || "Cheadle Blues", { body: n.body || "", icon: "icons/icon-192.png", tag: "mt-status" }); });
+          navigator.serviceWorker.ready.then(function (reg) { reg.showNotification(n.title || "Cheadle Blues", { body: n.body || "", icon: "icons/icon-192.png", badge: "icons/favicon-32.png", tag: "mt-" + Date.now(), renotify: true }); });
           if (store("mt_token")) loadStatus();
         });
         return m;
